@@ -33,8 +33,8 @@
 
 @protocol ZFTokenDelegate <NSObject>
 @optional
-- (void)tokenDidFocused:(UIView *)token;
-- (void)tokenDidUnFocused:(UIView *)token;
+- (void)tokenDidFocused:(ZFTokenField *)tokenField;
+- (void)tokenDidUnFocused:(ZFTokenField *)tokenField;
 @end
 
 @interface ZFTokenField : UIControl
