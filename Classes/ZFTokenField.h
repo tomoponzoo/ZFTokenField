@@ -32,6 +32,7 @@
 @end
 
 @protocol ZFTokenDelegate <NSObject>
+@optional
 - (void)tokenDidFocused:(UIView *)token;
 - (void)tokenDidUnFocused:(UIView *)token;
 @end

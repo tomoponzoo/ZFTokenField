@@ -230,21 +230,18 @@
 - (void)tokenDidTapped:(UITapGestureRecognizer *)gestureRecognizer {
     if (self.focusedTokenView == gestureRecognizer.view) {
         if ([self.focusedTokenView respondsToSelector:@selector(tokenDidUnFocused:)]) {
-            [self.focusedTokenView performSelector:@selector(tokenDidUnFocused:)
-                                        withObject:self.focusedTokenView];
+            [(id<ZFTokenDelegate>)self.focusedTokenView tokenDidUnFocused:self.focusedTokenView];
         }
         
         self.focusedTokenView = nil;
         
     } else {
         if ([self.focusedTokenView respondsToSelector:@selector(tokenDidUnFocused:)]) {
-            [self.focusedTokenView performSelector:@selector(tokenDidUnFocused:)
-                                        withObject:self.focusedTokenView];
+            [(id<ZFTokenDelegate>)self.focusedTokenView tokenDidUnFocused:self.focusedTokenView];
         }
         
         if ([gestureRecognizer.view respondsToSelector:@selector(tokenDidFocused:)]) {
-            [gestureRecognizer.view performSelector:@selector(tokenDidFocused:)
-                                         withObject:gestureRecognizer.view];
+            [(id<ZFTokenDelegate>)gestureRecognizer.view tokenDidFocused:gestureRecognizer.view];
         }
         
         self.focusedTokenView = gestureRecognizer.view;
