@@ -31,6 +31,12 @@
 - (void)tokenFieldDidEndEditing:(ZFTokenField *)tokenField;
 @end
 
+@protocol ZFTokenDelegate <NSObject>
+@optional
+- (void)tokenDidFocused:(UIView *)token;
+- (void)tokenDidUnFocused:(UIView *)token;
+@end
+
 @interface ZFTokenField : UIControl
 
 @property (nonatomic, weak) IBOutlet id<ZFTokenFieldDataSource> dataSource;

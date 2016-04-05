@@ -17,7 +17,7 @@
 - (void)setText:(NSString *)text
 {
     if ([text isEqualToString:@""]) {
-        if (((ZFTokenField *)self.superview).numberOfToken > 0) {
+        if (((ZFTokenField *)self.superview.superview).numberOfToken > 0) {
             text = @"\u200B";
         }
     }
@@ -46,9 +46,10 @@
 
 @end
 
-@interface ZFTokenField () <UITextFieldDelegate>
+@interface ZFTokenField () <UITextFieldDelegate, UIGestureRecognizerDelegate>
 @property (nonatomic, strong) ZFTokenTextField *textField;
 @property (nonatomic, strong) NSMutableArray *tokenViews;
+@property (nonatomic, strong) UIView *focusedTokenView;
 
 @property (nonatomic, strong) NSString *tempTextFieldText;
 
@@ -139,13 +140,20 @@
         for (int i = 0 ; i < count ; i++) {
             UIView *tokenView = [self.dataSource tokenField:self viewForTokenAtIndex:i];
             tokenView.autoresizingMask = UIViewAutoresizingNone;
-            [self addSubview:tokenView];
+            tokenView.tag = i;
+            tokenView.userInteractionEnabled = YES;
+            
+            UITapGestureRecognizer *gestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self
+                                                                                                action:@selector(tokenDidTapped:)];
+            [tokenView addGestureRecognizer:gestureRecognizer];
+            
+            [self.scrollView addSubview:tokenView];
             [self.tokenViews addObject:tokenView];
         }
     }
     
     [self.tokenViews addObject:self.textField];
-    [self addSubview:self.textField];
+    [self.scrollView addSubview:self.textField];
     self.textField.frame = (CGRect) {0,0,50,[self.dataSource lineHeightForTokenInField:self]};
     
     [self invalidateIntrinsicContentSize];
@@ -207,6 +215,43 @@
                                 animated:NO];
 }
 
+- (void)removeTokenAtIndex:(NSUInteger)index {
+    [self.tokenViews[index] removeFromSuperview];
+    [self.tokenViews removeObjectAtIndex:index];
+    
+    [self.textField setText:@""];
+    
+    if ([self.delegate respondsToSelector:@selector(tokenField:didRemoveTokenAtIndex:)]) {
+        [self.delegate tokenField:self didRemoveTokenAtIndex:index];
+    }
+}
+
+#pragma mark - GestureRecognizer
+- (void)tokenDidTapped:(UITapGestureRecognizer *)gestureRecognizer {
+    if (self.focusedTokenView == gestureRecognizer.view) {
+        if ([self.focusedTokenView respondsToSelector:@selector(tokenDidUnFocused:)]) {
+            [self.focusedTokenView performSelector:@selector(tokenDidUnFocused:)
+                                        withObject:self.focusedTokenView];
+        }
+        
+        self.focusedTokenView = nil;
+        
+    } else {
+        if ([self.focusedTokenView respondsToSelector:@selector(tokenDidUnFocused:)]) {
+            [self.focusedTokenView performSelector:@selector(tokenDidUnFocused:)
+                                        withObject:self.focusedTokenView];
+        }
+        
+        if ([gestureRecognizer.view respondsToSelector:@selector(tokenDidFocused:)]) {
+            [gestureRecognizer.view performSelector:@selector(tokenDidFocused:)
+                                         withObject:gestureRecognizer.view];
+        }
+        
+        self.focusedTokenView = gestureRecognizer.view;
+    }
+}
+
+
 #pragma mark - TextField
 
 - (void)textFieldDidBeginEditing:(ZFTokenTextField *)textField
@@ -238,17 +283,20 @@
     if ([[textField rawText] isEqualToString:@""]) {
         textField.text = @"\u200B";
         
-        if ([self.tempTextFieldText isEqualToString:@"\u200B"]) {
+        if (self.focusedTokenView) {
+            NSUInteger removeIndex = [self.tokenViews indexOfObject:self.focusedTokenView];
+            if (removeIndex == NSNotFound) {
+                self.focusedTokenView = nil;
+                return;
+            }
+            [self removeTokenAtIndex:removeIndex];
+            [self reloadData];
+            return;
+            
+        } else if ([self.tempTextFieldText isEqualToString:@"\u200B"]) {
             if (self.tokenViews.count > 1) {
                 NSUInteger removeIndex = self.tokenViews.count - 2;
-                [self.tokenViews[removeIndex] removeFromSuperview];
-                [self.tokenViews removeObjectAtIndex:removeIndex];
-                
-                [self.textField setText:@""];
-                
-                if ([self.delegate respondsToSelector:@selector(tokenField:didRemoveTokenAtIndex:)]) {
-                    [self.delegate tokenField:self didRemoveTokenAtIndex:removeIndex];
-                }
+                [self removeTokenAtIndex:removeIndex];
             }
         }
     }
