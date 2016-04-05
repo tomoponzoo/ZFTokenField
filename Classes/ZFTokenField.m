@@ -108,6 +108,7 @@
         [token setFrame:itemRect];
     }];
     
+    self.scrollView.frame = self.bounds;
 }
 
 - (CGSize)intrinsicContentSize
