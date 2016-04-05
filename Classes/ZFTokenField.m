@@ -51,6 +51,8 @@
 @property (nonatomic, strong) NSMutableArray *tokenViews;
 
 @property (nonatomic, strong) NSString *tempTextFieldText;
+
+@property (nonatomic, strong) UIScrollView *scrollView;
 @end
 
 @implementation ZFTokenField
@@ -89,6 +91,8 @@
     self.textField.delegate = self;
     [self.textField addTarget:self action:@selector(textFieldDidChange:) forControlEvents:UIControlEventEditingChanged];
     
+    self.scrollView = [[UIScrollView alloc] init];
+    
     [self reloadData];
 }
 
@@ -115,7 +119,9 @@
     [self enumerateItemRectsUsingBlock:^(CGRect itemRect) {
         totalRect = CGRectUnion(itemRect, totalRect);
     }];
-    return totalRect.size;
+    
+    self.scrollView.contentSize = totalRect.size;
+    return self.bounds.size;
 }
 
 #pragma mark - Public
@@ -144,6 +150,9 @@
     
     [self invalidateIntrinsicContentSize];
     [self.textField setText:@""];
+    
+    self.scrollView.frame = self.bounds;
+    [self addSubview:self.scrollView];
 }
 
 - (NSUInteger)numberOfToken
@@ -170,18 +179,14 @@
     }
     
     for (UIView *token in self.tokenViews) {
-        CGFloat width = MAX(CGRectGetWidth(self.bounds), CGRectGetWidth(token.frame));
         CGFloat tokenWidth = MIN(CGRectGetWidth(self.bounds), CGRectGetWidth(token.frame));
-        if (x > width - tokenWidth) {
-            y += lineHeight + margin;
-            x = 0;
-            rowCount = 0;
-        }
         
         if ([token isKindOfClass:[ZFTokenTextField class]]) {
             UITextField *textField = (UITextField *)token;
             CGSize size = [textField sizeThatFits:(CGSize){CGRectGetWidth(self.bounds), lineHeight}];
+            size.width += 20;
             size.height = lineHeight;
+            
             if (size.width > CGRectGetWidth(self.bounds)) {
                 size.width = CGRectGetWidth(self.bounds);
             }
@@ -192,6 +197,14 @@
         x += tokenWidth + margin;
         rowCount++;
     }
+}
+
+- (void)adjustContentOffset {
+    CGSize size = self.scrollView.contentSize;
+    CGFloat width = CGRectGetWidth(self.scrollView.bounds);
+    
+    [self.scrollView scrollRectToVisible:CGRectMake(size.width - width, 0, width, size.height)
+                                animated:NO];
 }
 
 #pragma mark - TextField
@@ -246,6 +259,8 @@
     if ([self.delegate respondsToSelector:@selector(tokenField:didTextChanged:)]) {
         [self.delegate tokenField:self didTextChanged:textField.text];
     }
+    
+    [self adjustContentOffset];
 }
 
 - (BOOL)textFieldShouldReturn:(UITextField *)textField
