@@ -93,6 +93,7 @@
     [self.textField addTarget:self action:@selector(textFieldDidChange:) forControlEvents:UIControlEventEditingChanged];
     
     self.scrollView = [[UIScrollView alloc] init];
+    self.scrollView.scrollsToTop = false;
     
     [self reloadData];
 }
